@@ -10,8 +10,10 @@ import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
+import org.eclipse.debug.internal.ui.DebugPluginImages;
 import org.eclipse.debug.internal.ui.SWTFactory;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
+import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -66,8 +68,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 	@Override
 	public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
-		// TODO Auto-generated method stub
-		System.out.println("SET DEFAULTS");
+
 	}
 
 	@Override
@@ -108,6 +109,11 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 	@Override
 	public String getName() {
 		return "Launches";
+	}
+	
+	@Override
+	public Image getImage() {
+		return DebugPluginImages.getImage(IDebugUIConstants.IMG_OBJS_LAUNCH_RUN);
 	}
 
 	protected void createEnvironmentTable(Composite parent) {
