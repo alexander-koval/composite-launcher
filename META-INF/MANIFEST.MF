@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Launcher
+Bundle-SymbolicName: com.akoval.launcher;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: com.akoval.launcher.Activator
+Bundle-Vendor: AKOVAL
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.debug.core,
+ org.eclipse.debug.ui,
+ org.eclipse.jdt.core,
+ org.eclipse.jdt.launching
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
