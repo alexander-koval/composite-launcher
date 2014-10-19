@@ -7,7 +7,6 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.internal.ui.DebugPluginImages;
@@ -56,7 +55,6 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 	@Override
 	public void createControl(Composite parent) {
-		// Create main composite
 		Composite mainComposite = SWTFactory.createComposite(parent, 2, 1,
 				GridData.FILL_HORIZONTAL);
 		setControl(mainComposite);
@@ -73,6 +71,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
+		tableViewer.refresh();
 		ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
 		try {
 			List<String> list = configuration.getAttribute(
@@ -90,13 +89,11 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 	@Override
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
 		TableItem[] items = tableViewer.getTable().getItems();
-		ArrayList<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<String>();
 		for (int index = 0; index < items.length; index++) {
 			TableItem item = items[index];
 			ILaunchConfiguration config = (ILaunchConfiguration) item.getData();
-			ILaunchConfigurationType type;
 			try {
-				type = config.getType();
 				String memento = config.getMemento();
 				list.add(memento);
 			} catch (CoreException e) {
@@ -115,10 +112,15 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 	public Image getImage() {
 		return DebugPluginImages.getImage(IDebugUIConstants.IMG_OBJS_LAUNCH_RUN);
 	}
+	
+	@Override
+	public boolean isValid(ILaunchConfiguration launchConfig) {
+		TableItem[] items = tableViewer.getTable().getItems();
+		return items.length > 0;
+	}
 
 	protected void createEnvironmentTable(Composite parent) {
 		Font font = parent.getFont();
-		// Create table composite
 		Composite tableComposite = SWTFactory.createComposite(parent, font, 1,
 				1, GridData.FILL_BOTH, 0, 0);
 		// Create table
@@ -140,7 +142,6 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 						removeButton.setEnabled(true);
 					}
 				});
-		// Create columns
 		final TableColumn tableColumn = new TableColumn(table, SWT.NONE, 0);
 		tableColumn.setText("Name");
 		final Composite comp = tableComposite;
@@ -154,12 +155,10 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 	}
 
 	protected void createTableButtons(Composite parent) {
-		// Create button composite
 		Composite buttonComposite = SWTFactory.createComposite(parent,
 				parent.getFont(), 1, 1, GridData.VERTICAL_ALIGN_BEGINNING
 						| GridData.HORIZONTAL_ALIGN_END, 0, 0);
 
-		// Create buttons
 		addButton = createPushButton(buttonComposite, "Add", null);
 		addButton.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -177,7 +176,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 					if (dialog.open() != Window.CANCEL) {
 						Object[] result = dialog.getResult();
 						tableViewer.add(result);
-						updateLaunchConfigurationDialog();
+						getLaunchConfigurationDialog().updateButtons();
 					}
 				} catch (CoreException e) {
 					e.printStackTrace();
@@ -196,7 +195,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 				tableViewer.remove(configuration);
 				removeButton.setEnabled(false);
 				editButton.setEnabled(false);
-				updateLaunchConfigurationDialog();
+				getLaunchConfigurationDialog().updateButtons();
 			}
 		});
 		removeButton.setEnabled(false);
@@ -220,7 +219,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 						int selectionIndex = tableViewer.getTable()
 								.getSelectionIndex();
 						tableViewer.replace(result, selectionIndex);
-						updateLaunchConfigurationDialog();
+						getLaunchConfigurationDialog().updateButtons();
 					}
 				} catch (CoreException e) {
 					e.printStackTrace();
