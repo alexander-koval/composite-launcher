@@ -4,17 +4,22 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.internal.ui.DebugPluginImages;
 import org.eclipse.debug.internal.ui.SWTFactory;
+import org.eclipse.debug.internal.ui.launchConfigurations.LaunchConfigurationTreeContentProvider;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
+import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelection;
@@ -30,6 +35,7 @@ import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
@@ -37,30 +43,35 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
+import com.akoval.launcher.Activator;
 import com.akoval.launcher.CompositeLaunchConstants;
 
 public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		ILaunchConfigurationTab {
 
-	protected TableViewer tableViewer;
 	protected Button addButton;
 	protected Button editButton;
 	protected Button removeButton;
+	protected TableViewer tableViewer;
+	private static final String NAME = "Launches";
+	private static final Image SAMPLE = Activator.getImageDescriptor(
+			"icons/sample.gif").createImage();
 
 	@Override
 	public void createControl(Composite parent) {
 		Composite mainComposite = SWTFactory.createComposite(parent, 2, 1,
 				GridData.FILL_HORIZONTAL);
 		setControl(mainComposite);
-
 		createEnvironmentTable(mainComposite);
 		createTableButtons(mainComposite);
+
 		Dialog.applyDialogFont(mainComposite);
 	}
 
@@ -76,13 +87,14 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		try {
 			List<String> list = configuration.getAttribute(
 					CompositeLaunchConstants.MEMENTO, new ArrayList<String>());
-			for (Iterator<String> it = list.iterator(); it.hasNext(); ) {
+			for (Iterator<String> it = list.iterator(); it.hasNext();) {
 				String memento = it.next();
-				ILaunchConfiguration config = manager.getLaunchConfiguration(memento);
+				ILaunchConfiguration config = manager
+						.getLaunchConfiguration(memento);
 				tableViewer.add(config);
 			}
 		} catch (CoreException e) {
-			e.printStackTrace();
+			MessageDialog.openError(getShell(), "Error", e.getMessage());
 		}
 	}
 
@@ -97,7 +109,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 				String memento = config.getMemento();
 				list.add(memento);
 			} catch (CoreException e) {
-				e.printStackTrace();
+				MessageDialog.openError(getShell(), "Error", e.getMessage());
 			}
 		}
 		configuration.setAttribute(CompositeLaunchConstants.MEMENTO, list);
@@ -105,18 +117,34 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 	@Override
 	public String getName() {
-		return "Launches";
+		return NAME;
 	}
-	
+
 	@Override
 	public Image getImage() {
-		return DebugPluginImages.getImage(IDebugUIConstants.IMG_OBJS_LAUNCH_RUN);
+		return SAMPLE;
 	}
-	
+
 	@Override
 	public boolean isValid(ILaunchConfiguration launchConfig) {
 		TableItem[] items = tableViewer.getTable().getItems();
-		return items.length > 0;
+		if (items.length > 0) {
+			for (int index = 0; index < items.length; index++) {
+				TableItem item = items[index];
+				ILaunchConfiguration config = (ILaunchConfiguration)item.getData();
+				String mode = null;
+				try {
+					mode = getLaunchConfigurationDialog().getMode();
+					config.supportsMode(mode);
+				} catch (CoreException e) {
+					Color red = getShell().getDisplay().getSystemColor(SWT.COLOR_RED);
+					item.setForeground(red);
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 	protected void createEnvironmentTable(Composite parent) {
@@ -134,6 +162,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		table.setFont(font);
 		tableViewer
 				.setContentProvider(new LaunchConfigurationContentProvider());
+		tableViewer.setLabelProvider(new LaunchConfigurationLabelProvider());
 		tableViewer
 				.addSelectionChangedListener(new ISelectionChangedListener() {
 					@Override
@@ -179,12 +208,13 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 						getLaunchConfigurationDialog().updateButtons();
 					}
 				} catch (CoreException e) {
-					e.printStackTrace();
+					MessageDialog.openError(getShell(), "Error", e.getMessage()); 
 				}
 			}
 		});
 
 		removeButton = createPushButton(buttonComposite, "Remove", null);
+		removeButton.setEnabled(false);
 		removeButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
@@ -198,7 +228,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 				getLaunchConfigurationDialog().updateButtons();
 			}
 		});
-		removeButton.setEnabled(false);
+
 		editButton = createPushButton(buttonComposite, "Edit", null);
 		editButton.setEnabled(false);
 		editButton.addSelectionListener(new SelectionAdapter() {
@@ -222,7 +252,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 						getLaunchConfigurationDialog().updateButtons();
 					}
 				} catch (CoreException e) {
-					e.printStackTrace();
+					MessageDialog.openError(getShell(), "Error", e.getMessage()); 
 				}
 			}
 		});
@@ -254,6 +284,18 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 	protected class LaunchConfigurationLabelProvider implements ILabelProvider {
 		@Override
 		public Image getImage(Object element) {
+			if (element instanceof ILaunchConfiguration) {
+				ILaunchConfiguration configuration = (ILaunchConfiguration) element;
+				try {
+					ILaunchConfigurationType type = configuration.getType();
+					Image image = DebugUITools.getSourceContainerImage(type
+							.getIdentifier());
+					return image;
+				} catch (CoreException e) {
+					return null;
+				}
+
+			}
 			return null;
 		}
 
@@ -269,10 +311,12 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 		@Override
 		public void addListener(ILabelProviderListener listener) {
+
 		}
 
 		@Override
 		public void dispose() {
+
 		}
 
 		@Override
@@ -282,7 +326,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 		@Override
 		public void removeListener(ILabelProviderListener listener) {
-		}
 
+		}
 	}
 }
