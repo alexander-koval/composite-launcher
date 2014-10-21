@@ -56,13 +56,12 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 
 	@Override
 	public void createControl(Composite parent) {
-		Composite mainComposite = SWTFactory.createComposite(parent, 2, 1,
+		Composite composite = SWTFactory.createComposite(parent, 2, 1,
 				GridData.FILL_HORIZONTAL);
-		setControl(mainComposite);
-		createEnvironmentTable(mainComposite);
-		createTableButtons(mainComposite);
-
-		Dialog.applyDialogFont(mainComposite);
+		setControl(composite);
+		createTableViewer(composite);
+		createTableButtons(composite);
+		Dialog.applyDialogFont(composite);
 	}
 
 	@Override
@@ -139,7 +138,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		return false;
 	}
 
-	protected void createEnvironmentTable(Composite parent) {
+	protected void createTableViewer(Composite parent) {
 		Font font = parent.getFont();
 		Composite tableComposite = SWTFactory.createComposite(parent, font, 1,
 				1, GridData.FILL_BOTH, 0, 0);
@@ -152,11 +151,9 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
 		table.setFont(font);
-		tableViewer
-				.setContentProvider(new LaunchConfigurationContentProvider());
+		tableViewer.setContentProvider(new LaunchConfigurationContentProvider());
 		tableViewer.setLabelProvider(new LaunchConfigurationLabelProvider());
-		tableViewer
-				.addSelectionChangedListener(new ISelectionChangedListener() {
+		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
 						editButton.setEnabled(true);
@@ -252,8 +249,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 			dialog.setTitle("Edit Launch Configuration");
 			if (dialog.open() != Window.CANCEL) {
 				Object result = dialog.getResult()[0];
-				int selectionIndex = tableViewer.getTable()
-						.getSelectionIndex();
+				int selectionIndex = tableViewer.getTable().getSelectionIndex();
 				tableViewer.replace(result, selectionIndex);
 				getLaunchConfigurationDialog().updateButtons();
 			}
