@@ -7,24 +7,18 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.internal.ui.SWTFactory;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
-import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.ILabelProvider;
-import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
@@ -127,13 +121,15 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		if (items.length > 0) {
 			for (int index = 0; index < items.length; index++) {
 				TableItem item = items[index];
-				ILaunchConfiguration config = (ILaunchConfiguration)item.getData();
+				ILaunchConfiguration config = (ILaunchConfiguration) item
+						.getData();
 				String mode = null;
 				try {
 					mode = getLaunchConfigurationDialog().getMode();
 					config.supportsMode(mode);
 				} catch (CoreException e) {
-					Color red = getShell().getDisplay().getSystemColor(SWT.COLOR_RED);
+					Color red = getShell().getDisplay().getSystemColor(
+							SWT.COLOR_RED);
 					item.setForeground(red);
 					return false;
 				}
@@ -188,24 +184,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		addButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				ILaunchManager manager = DebugPlugin.getDefault()
-						.getLaunchManager();
-				ILaunchConfiguration[] configurations;
-				Shell shell = getShell();
-				try {
-					configurations = manager.getLaunchConfigurations();
-					ElementListSelectionDialog dialog = new ElementListSelectionDialog(
-							shell, new LaunchConfigurationLabelProvider());
-					dialog.setElements(configurations);
-					dialog.setTitle("Add Launch Configuration");
-					if (dialog.open() != Window.CANCEL) {
-						Object[] result = dialog.getResult();
-						tableViewer.add(result);
-						getLaunchConfigurationDialog().updateButtons();
-					}
-				} catch (CoreException e) {
-					MessageDialog.openError(getShell(), "Error", e.getMessage()); 
-				}
+				onAddButtonSelected();
 			}
 		});
 
@@ -214,14 +193,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		removeButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				ISelection selection = tableViewer.getSelection();
-				StructuredSelection structed = (StructuredSelection) selection;
-				ILaunchConfiguration configuration = (ILaunchConfiguration) structed
-						.getFirstElement();
-				tableViewer.remove(configuration);
-				removeButton.setEnabled(false);
-				editButton.setEnabled(false);
-				getLaunchConfigurationDialog().updateButtons();
+				onRemoveButtonSelected();
 			}
 		});
 
@@ -230,99 +202,63 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		editButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				ILaunchManager manager = DebugPlugin.getDefault()
-						.getLaunchManager();
-				ILaunchConfiguration[] configurations;
-				Shell shell = getShell();
-				try {
-					configurations = manager.getLaunchConfigurations();
-					ElementListSelectionDialog dialog = new ElementListSelectionDialog(
-							shell, new LaunchConfigurationLabelProvider());
-					dialog.setElements(configurations);
-					dialog.setTitle("Edit Launch Configuration");
-					if (dialog.open() != Window.CANCEL) {
-						Object result = dialog.getResult()[0];
-						int selectionIndex = tableViewer.getTable()
-								.getSelectionIndex();
-						tableViewer.replace(result, selectionIndex);
-						getLaunchConfigurationDialog().updateButtons();
-					}
-				} catch (CoreException e) {
-					MessageDialog.openError(getShell(), "Error", e.getMessage()); 
-				}
+				onEditButtonSelected();
 			}
 		});
 	}
-
-	protected class LaunchConfigurationContentProvider implements
-			IStructuredContentProvider {
-		@Override
-		public Object[] getElements(Object inputElement) {
-			ILaunchConfiguration[] configurations = null;
-			try {
-				configurations = DebugPlugin.getDefault().getLaunchManager()
-						.getLaunchConfigurations();
-			} catch (CoreException e) {
-				return new ILaunchConfiguration[0];
+	
+	private void onAddButtonSelected() {
+		ILaunchManager manager = DebugPlugin.getDefault()
+				.getLaunchManager();
+		ILaunchConfiguration[] configurations;
+		Shell shell = getShell();
+		try {
+			configurations = manager.getLaunchConfigurations();
+			ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+					shell, new LaunchConfigurationLabelProvider());
+			dialog.setElements(configurations);
+			dialog.setTitle("Add Launch Configuration");
+			if (dialog.open() != Window.CANCEL) {
+				Object[] result = dialog.getResult();
+				tableViewer.add(result);
+				getLaunchConfigurationDialog().updateButtons();
 			}
-			return configurations;
-		}
-
-		@Override
-		public void dispose() {
-		}
-
-		@Override
-		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+		} catch (CoreException e) {
+			MessageDialog.openError(getShell(), "Error", e.getMessage());
 		}
 	}
 
-	protected class LaunchConfigurationLabelProvider implements ILabelProvider {
-		@Override
-		public Image getImage(Object element) {
-			if (element instanceof ILaunchConfiguration) {
-				ILaunchConfiguration configuration = (ILaunchConfiguration) element;
-				try {
-					ILaunchConfigurationType type = configuration.getType();
-					Image image = DebugUITools.getSourceContainerImage(type
-							.getIdentifier());
-					return image;
-				} catch (CoreException e) {
-					return null;
-				}
-
+	private void onRemoveButtonSelected() {
+		ISelection selection = tableViewer.getSelection();
+		StructuredSelection structed = (StructuredSelection) selection;
+		ILaunchConfiguration configuration = (ILaunchConfiguration) structed
+				.getFirstElement();
+		tableViewer.remove(configuration);
+		removeButton.setEnabled(false);
+		editButton.setEnabled(false);
+		getLaunchConfigurationDialog().updateButtons();
+	}
+	
+	private void onEditButtonSelected() {
+		ILaunchManager manager = DebugPlugin.getDefault()
+				.getLaunchManager();
+		ILaunchConfiguration[] configurations;
+		Shell shell = getShell();
+		try {
+			configurations = manager.getLaunchConfigurations();
+			ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+					shell, new LaunchConfigurationLabelProvider());
+			dialog.setElements(configurations);
+			dialog.setTitle("Edit Launch Configuration");
+			if (dialog.open() != Window.CANCEL) {
+				Object result = dialog.getResult()[0];
+				int selectionIndex = tableViewer.getTable()
+						.getSelectionIndex();
+				tableViewer.replace(result, selectionIndex);
+				getLaunchConfigurationDialog().updateButtons();
 			}
-			return null;
-		}
-
-		@Override
-		public String getText(Object element) {
-			if (element instanceof ILaunchConfiguration) {
-				ILaunchConfiguration configuration = (ILaunchConfiguration) element;
-				String name = configuration.getName();
-				return name;
-			}
-			return element.toString();
-		}
-
-		@Override
-		public void addListener(ILabelProviderListener listener) {
-
-		}
-
-		@Override
-		public void dispose() {
-
-		}
-
-		@Override
-		public boolean isLabelProperty(Object element, String property) {
-			return false;
-		}
-
-		@Override
-		public void removeListener(ILabelProviderListener listener) {
-
+		} catch (CoreException e) {
+			MessageDialog.openError(getShell(), "Error", e.getMessage());
 		}
 	}
 }

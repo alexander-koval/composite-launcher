@@ -38,9 +38,10 @@ public class CompositeLaunchConfigurationDelegate extends
 				ILaunchConfiguration config = manager
 						.getLaunchConfiguration(memento);
 				if (configuration.getMemento().equals(config.getMemento())) {
-					IStatus status  = new Status(Status.ERROR, "unknown", "Infinite loop detected for '"
-							+ configuration.getName()
-							+ "' configuration");
+					IStatus status = new Status(Status.ERROR, "unknown",
+							"Infinite loop detected for '"
+									+ configuration.getName()
+									+ "' configuration");
 					throw new CoreException(status);
 				} else {
 					config.launch(mode, monitor);
@@ -49,17 +50,17 @@ public class CompositeLaunchConfigurationDelegate extends
 		} catch (CoreException e) {
 			class AsyncException implements Runnable {
 				Exception exception;
-				
+
 				public AsyncException(Exception exception) {
 					this.exception = exception;
 				}
-				
+
 				@Override
 				public void run() {
-					MessageDialog.openError(Display.getCurrent().getActiveShell(),
-							"Error", exception.getMessage());					
+					MessageDialog.openError(Display.getCurrent()
+							.getActiveShell(), "Error", exception.getMessage());
 				}
-				
+
 			}
 			Display.getDefault().syncExec(new AsyncException(e));
 		}
