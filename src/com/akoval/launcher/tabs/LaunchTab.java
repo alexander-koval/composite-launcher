@@ -4,19 +4,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
-import org.eclipse.debug.internal.ui.DebugPluginImages;
 import org.eclipse.debug.internal.ui.SWTFactory;
-import org.eclipse.debug.internal.ui.launchConfigurations.LaunchConfigurationTreeContentProvider;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
 import org.eclipse.debug.ui.DebugUITools;
-import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -43,7 +39,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -53,6 +48,7 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import com.akoval.launcher.Activator;
 import com.akoval.launcher.CompositeLaunchConstants;
 
+@SuppressWarnings("restriction")
 public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		ILaunchConfigurationTab {
 
@@ -151,7 +147,7 @@ public class LaunchTab extends AbstractLaunchConfigurationTab implements
 		Font font = parent.getFont();
 		Composite tableComposite = SWTFactory.createComposite(parent, font, 1,
 				1, GridData.FILL_BOTH, 0, 0);
-		// Create table
+
 		tableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.H_SCROLL
 				| SWT.V_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
 		Table table = tableViewer.getTable();
